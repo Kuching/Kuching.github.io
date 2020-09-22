@@ -17,7 +17,7 @@
 <meta property="og:image" content="http://yoursite.com/images/communication-through-mqtt-broker.png">
 <meta property="og:image" content="http://yoursite.com/images/mosquitto-safety-control.png">
 <meta property="article:published_time" content="2020-09-12T07:54:39.000Z">
-<meta property="article:modified_time" content="2020-09-13T15:09:30.010Z">
+<meta property="article:modified_time" content="2020-09-21T14:40:03.989Z">
 <meta property="article:author" content="Lya">
 <meta property="article:tag" content="MQTT">
 <meta property="article:tag" content="Mosquitto">
@@ -97,7 +97,7 @@
 <p>这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。<br>前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享一下我的经验。</p>
 <a id="more"></a>
 
-<p>简单来说，MQTT是一种基于发布/订阅的消息协议，可以基于TCP或websocket连接。由于MQTT相较于HTTP更轻量，能节省更多的传输成本，因此在IoT设备通信场景中使用较为广泛。想对MQTT协议有进一步了解的朋友，可以查看我的另外一篇博客<a href="https://kuching.github.io/to-be-continued/MQTT协议" target="_blank" rel="noopener">MQTT协议</a>（目前还没写完，之后会更新上来）。<br>在这种基于发布/订阅的方式下，设备之间实际上是通过消息代理去进行通信，而mosquitto就是一个支持MQTT协议的开源消息代理。可以理解为设备与消息代理之间的通信会采用MQTT协议，消息代理也会通过MQTT协议与消息订阅者进行通信。</p>
+<p>简单来说，MQTT是一种基于发布/订阅的消息协议，可以基于TCP或websocket连接。由于MQTT相较于HTTP更轻量，能节省更多的传输成本，因此在IoT设备通信场景中使用较为广泛。想对MQTT协议有进一步了解的朋友，可以查看我的另外一篇博客<a href="https://kuching.github.io/2020/09/21/MQTT协议/#more" target="_blank" rel="noopener">MQTT协议</a>。<br>在这种基于发布/订阅的方式下，设备之间实际上是通过消息代理去进行通信，而mosquitto就是一个支持MQTT协议的开源消息代理。可以理解为设备与消息代理之间的通信会采用MQTT协议，消息代理也会通过MQTT协议与消息订阅者进行通信。</p>
 <p><img src="/images/communication-through-mqtt-broker.png" alt="设备通过消息代理进行通信"></p>
 <p>接下来，我会介绍一套可用的mosquitto安全方案。如图：</p>
 <p><img src="/images/mosquitto-safety-control.png" alt="mosquitto安全方案"></p>
@@ -131,6 +131,20 @@
   </div>
   
     
+<nav id="article-nav">
+  
+    <a href="/2020/09/21/MQTT%E5%8D%8F%E8%AE%AE/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          MQTT协议
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
   
 </article>
 
@@ -155,7 +169,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签云</h3>
     <div class="widget tagcloud">
-      <a href="/tags/MQTT/" style="font-size: 10px;">MQTT</a> <a href="/tags/Mosquitto/" style="font-size: 10px;">Mosquitto</a>
+      <a href="/tags/MQTT/" style="font-size: 20px;">MQTT</a> <a href="/tags/Mosquitto/" style="font-size: 10px;">Mosquitto</a>
     </div>
   </div>
 
@@ -175,6 +189,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2020/09/21/MQTT%E5%8D%8F%E8%AE%AE/">MQTT协议</a>
+          </li>
         
           <li>
             <a href="/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/">mosquitto安全机制</a>
