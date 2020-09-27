@@ -64,10 +64,10 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-MQTT协议" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-nsq消息-从生产者到消费者" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2020/09/21/MQTT%E5%8D%8F%E8%AE%AE/" class="article-date">
-  <time datetime="2020-09-21T14:29:51.000Z" itemprop="datePublished">2020-09-21</time>
+    <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/" class="article-date">
+  <time datetime="2020-09-27T14:15:32.000Z" itemprop="datePublished">2020-09-27</time>
 </a>
     
   </div>
@@ -78,7 +78,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/09/21/MQTT%E5%8D%8F%E8%AE%AE/">MQTT协议</a>
+      <a class="article-title" href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/">nsq消息-从生产者到消费者</a>
     </h1>
   
 
@@ -86,16 +86,60 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>初稿 2020/9/21<br>这篇博客主要是想介绍一下MQTT协议的原理。我会通过分析demo和paho.mqtt.golang的部分代码来解析MQTT协议的通信过程。</p>
+        <p>我突然意识到，在隔了差不多两个多月，我重新看之前写的nsq学习笔记时，我完全没有办法在其中找到我想了解的信息。<br>一个主要的原因是，我当时大部分笔记都是对官网文档的直接翻译，并没有自己的问题和思考在其中。<br>所以今天主要是想重新回顾一下nsq中的数据流走向。</p>
         
           <p class="article-more-link">
-            <a href="/2020/09/21/MQTT%E5%8D%8F%E8%AE%AE/#more">Read More</a>
+            <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2020/09/21/MQTT%E5%8D%8F%E8%AE%AE/" data-id="ckfcmm1vm00006gszf06qdfyz" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/" data-id="ckfl7qd4x0001ossz936o0a5d" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NSQ/" rel="tag">NSQ</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-mqtt协议原理" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/" class="article-date">
+  <time datetime="2020-09-26T08:05:52.000Z" itemprop="datePublished">2020-09-26</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/">mqtt协议原理</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>这篇博客主要是想介绍一下物联网通信协议MQTT的原理，其中demo使用了客户端库paho.mqtt.golang。</p>
+<p>MQTT与CoAP, LWM2M一样都是物联网通信中的主流协议。其中MQTT协议基于TCP，因此支持长连接; 而CoAP, LWM2M基于UDP，主要用于点对点的通信。由于MQTT报文基于文本，而CoAP、LWM2M使用二进制格式报文，因此后二者的报文长度更短，对设备和网络的要求更低。<br>三者各有各的特点，因此实际开发中选用哪个协议取决于具体的业务需求。</p>
+        
+          <p class="article-more-link">
+            <a href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/" data-id="ckfl7qd4s0000ossz2sji141x" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MQTT/" rel="tag">MQTT</a></li></ul>
@@ -139,7 +183,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/" data-id="ckf18jg4s00004oszh1796owu" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/" data-id="ckfjdr6k70000ugszdudyhrwe" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MQTT/" rel="tag">MQTT</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Mosquitto/" rel="tag">Mosquitto</a></li></ul>
@@ -164,7 +208,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MQTT/" rel="tag">MQTT</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Mosquitto/" rel="tag">Mosquitto</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MQTT/" rel="tag">MQTT</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Mosquitto/" rel="tag">Mosquitto</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NSQ/" rel="tag">NSQ</a></li></ul>
     </div>
   </div>
 
@@ -174,7 +218,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签云</h3>
     <div class="widget tagcloud">
-      <a href="/tags/MQTT/" style="font-size: 20px;">MQTT</a> <a href="/tags/Mosquitto/" style="font-size: 10px;">Mosquitto</a>
+      <a href="/tags/MQTT/" style="font-size: 20px;">MQTT</a> <a href="/tags/Mosquitto/" style="font-size: 10px;">Mosquitto</a> <a href="/tags/NSQ/" style="font-size: 10px;">NSQ</a>
     </div>
   </div>
 
@@ -196,7 +240,11 @@
       <ul>
         
           <li>
-            <a href="/2020/09/21/MQTT%E5%8D%8F%E8%AE%AE/">MQTT协议</a>
+            <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/">nsq消息-从生产者到消费者</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/">mqtt协议原理</a>
           </li>
         
           <li>

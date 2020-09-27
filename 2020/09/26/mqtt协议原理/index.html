@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>mqtt协议原理 | Lya&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="这篇博客主要是想介绍一下物联网通信协议MQTT的原理，其中demo使用了客户端库paho.mqtt.golang。 MQTT与CoAP, LWM2M一样都是物联网通信中的主流协议。其中MQTT协议基于TCP，因此支持长连接; 而CoAP, LWM2M基于UDP，主要用于点对点的通信。由于MQTT报文基于文本，而CoAP、LWM2M使用二进制格式报文，因此后二者的报文长度更短，对设备和网络的要求更低">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mqtt协议原理">
+<meta property="og:url" content="http://yoursite.com/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Lya&#39;s blog">
+<meta property="og:description" content="这篇博客主要是想介绍一下物联网通信协议MQTT的原理，其中demo使用了客户端库paho.mqtt.golang。 MQTT与CoAP, LWM2M一样都是物联网通信中的主流协议。其中MQTT协议基于TCP，因此支持长连接; 而CoAP, LWM2M基于UDP，主要用于点对点的通信。由于MQTT报文基于文本，而CoAP、LWM2M使用二进制格式报文，因此后二者的报文长度更短，对设备和网络的要求更低">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/communication-through-mqtt-broker.png">
+<meta property="og:image" content="http://yoursite.com/images/mqtt-pub-when-qos-0.png">
+<meta property="og:image" content="http://yoursite.com/images/mqtt-pub-when-qos-1.png">
+<meta property="og:image" content="http://yoursite.com/images/mqtt-pub-when-qos-2.png">
+<meta property="article:published_time" content="2020-09-26T08:05:52.000Z">
+<meta property="article:modified_time" content="2020-09-27T14:36:06.344Z">
+<meta property="article:author" content="Lya">
+<meta property="article:tag" content="MQTT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/communication-through-mqtt-broker.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Lya&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lya&#39;s blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-mqtt协议原理" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/" class="article-date">
+  <time datetime="2020-09-26T08:05:52.000Z" itemprop="datePublished">2020-09-26</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      mqtt协议原理
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>这篇博客主要是想介绍一下物联网通信协议MQTT的原理，其中demo使用了客户端库paho.mqtt.golang。</p>
+<p>MQTT与CoAP, LWM2M一样都是物联网通信中的主流协议。其中MQTT协议基于TCP，因此支持长连接; 而CoAP, LWM2M基于UDP，主要用于点对点的通信。由于MQTT报文基于文本，而CoAP、LWM2M使用二进制格式报文，因此后二者的报文长度更短，对设备和网络的要求更低。<br>三者各有各的特点，因此实际开发中选用哪个协议取决于具体的业务需求。</p>
+<a id="more"></a>
+
+<h4 id="MQTT"><a href="#MQTT" class="headerlink" title="MQTT"></a>MQTT</h4><p>MQTT - Message Queuing Telemetry Transport 消息队列遥测传输<br>MQTT基于发布/订阅模型，是为硬件性能较低、需要低功耗、网络不稳定的设备而设计的。为什么这么说呢？<br>首先,这种基于发布/订阅模型的协议在实现上，需要一个消息中间件（常被称为消息代理）负责消息的缓存和转发。</p>
+<p><img src="/images/communication-through-mqtt-broker.png" alt="设备通过消息代理进行通信"></p>
+<p>设备A想要与设备B通信时，A只需要将消息发送给中间件，而无需设备B时刻保持在线。因此即使A发送消息的时候B并不在线，A也无需在本地保存消息并尝试重发。<br>这就非常适用于网络不稳定的设备场景。</p>
+<h4 id="使用paho-mqtt-golang进行MQTT通信"><a href="#使用paho-mqtt-golang进行MQTT通信" class="headerlink" title="使用paho.mqtt.golang进行MQTT通信"></a>使用paho.mqtt.golang进行MQTT通信</h4><p>Mosquitto是一个开源的MQTT消息代理，paho.mqtt.golang（以下简称paho库）则是一个开源的MQTT客户端库，二者都出自于eclipse。<br>实际测试的话需要大家本地已经安装有Mosquitto，并开启了require_certificate配置项。<br>Mosquitto的安装和配置过程，网上有非常多的教程，这里我就不再赘述了。</p>
+<p>接下来我会对通信过程中的各个步骤进行分析。</p>
+<h5 id="1-连接"><a href="#1-连接" class="headerlink" title="1 连接"></a>1 连接</h5><p>客户端与消息代理之前，双方需要建立连接。<br>首先，我们需要指定连接选项opts的具体选项值。paho库的options.go文件提供了多个外部函数供用户指定连接选项，如AddBroker、SetClientID、SetTLSConfig等。<br>在demo中，我们只设置了以下选项，其余均使用默认值。其他选项的用法请参考我的另一篇文章<a href="https://kuching.github.io/" target="_blank" rel="noopener">paho.mqtt.golang源码分析</a>（还没写呢哈哈哈哈）</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">opts := mqtt.NewClientOptions()</span><br><span class="line"><span class="comment">// AddBroker指定了消息代理URI为ssl：//localhost:8883</span></span><br><span class="line"><span class="comment">// 从URI的协议头可以看出，我们要连接的消息代理开启了证书认证</span></span><br><span class="line">opts.AddBroker(<span class="string">"ssl://localhost:8883"</span>)</span><br><span class="line"><span class="comment">// SetClientID指定了客户端在连接期间的唯一标识</span></span><br><span class="line">opts.SetClientID(<span class="string">"sensor_01"</span>)</span><br><span class="line"><span class="comment">// NewTLSConfig中定义了客户端所使用的TLS协议配置，包括客户端本地的证书路径等</span></span><br><span class="line">opts.SetTLSConfig(NewTLSConfig())</span><br><span class="line"><span class="comment">// SetKeepAlive指定了客户端与消息代理之间的ping周期</span></span><br><span class="line"><span class="comment">// 当指定为20s时，客户端每隔20s向消息代理发送一个心跳包</span></span><br><span class="line">opts.SetKeepAlive(<span class="number">20</span> * time.Second)</span><br><span class="line"><span class="comment">// SetPingTimeout指定了客户端发送心跳包后等待的时间</span></span><br><span class="line"><span class="comment">// 当指定为5s时，如果客户端发送心跳包之后5s内没有收到回应的话，客户端会认定为连接丢失。</span></span><br><span class="line">opts.SetPingTimeout(<span class="number">5</span> * time.Second)</span><br><span class="line"><span class="comment">// SetCleanSession指定了客户端的会话在重连时是否会被清除</span></span><br><span class="line"><span class="comment">// 当指定为false时，如果客户端在断开连接前有未接收的消息，消息代理将保留其会话，</span></span><br><span class="line"><span class="comment">// 并在客户端重新连接时，发送此前未送达的消息</span></span><br><span class="line">opts.SetCleanSession(<span class="literal">false</span>)</span><br><span class="line"><span class="comment">// SetWill指定了客户端的遗言，顾名思义，当客户端与消息代理的连接异常断开时</span></span><br><span class="line"><span class="comment">// 消息代理将代表客户端发布遗言消息。常用于异常离线的通知功能。</span></span><br><span class="line">opts.SetWill(<span class="string">"device/sensor_01"</span>, <span class="string">"I'm dead"</span>, <span class="number">2</span>, <span class="literal">false</span>)</span><br></pre></td></tr></table></figure>
+
+<p>接下来，我们来看一下客户端的TLS协议配置具体会指定些什么。如对TLS协议原理感兴趣，可以参考我的另一篇文章<a href="https://kuching.github.io/" target="_blank" rel="noopener">TLS协议原理分析</a>（也还没写呢哈哈哈哈）</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NewTLSConfig返回的是一个crpto/tls包中定义的Config实例</span></span><br><span class="line"><span class="comment">// 通过以下配置可以让客户端在连接时对服务端进行认证</span></span><br><span class="line"><span class="keyword">return</span> &amp;tls.Config&#123;</span><br><span class="line">	<span class="comment">// RootCAs为客户端支持的CA根证书</span></span><br><span class="line">	RootCAs: certpool,</span><br><span class="line">	<span class="comment">// InsecureSkipVerify为false时，客户端会对服务端证书进行校验</span></span><br><span class="line">	InsecureSkipVerify: <span class="literal">false</span>,</span><br><span class="line">	<span class="comment">// certificates[0]为客户端的证书，在连接时需要提供此证书</span></span><br><span class="line">	Certificates: []tls.Certificate&#123;cert&#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Connect会首先通过tlsconfig建立tls连接，再基于tls连接进行MQTT报文传输。连接建立以后，客户端发送给消息代理的第一个报文必须是CONNECT报文。消息代理接收CONNECT报文并处理成功时，会返回CONNACK报文。如果客户端在合理的时间内没有收到CONNACK，则应该重发CONNECT或者关掉tls连接。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NewClient返回一个Client接口，这个接口定义了如连接、订阅、发布之类的MQTT客户端基本操作</span></span><br><span class="line">client = mqtt.NewClient(opts)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> token := client.Connect(); token.Wait() &amp;&amp; token.Error() != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="built_in">panic</span>(token.Error())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-发布"><a href="#2-发布" class="headerlink" title="2 发布"></a>2 发布</h5><p>Publish用于向某个topic发布消息。<br>在连接跟订阅的过程中，客户端只需要确保消息代理了解这件事就可以了。<br>但在发布的过程中，客户端不仅需要确认消息代理收到消息了，有时还需要确认消息订阅者也收到消息。为此，MQTT引入了Qos的概念。客户端在发布消息时，需要指定Qos。</p>
+<h6 id="2-1-Qos"><a href="#2-1-Qos" class="headerlink" title="2.1 Qos"></a>2.1 Qos</h6><p>Qos为0，代表消息最多送达订阅者一次；<br>Qos为1，代表消息最少送达一次；<br>Qos为2，代表消息最多送达一次；</p>
+<p>根据Qos的不同，消息代理跟客户端之间的通信过程也不同。<br>Qos为0时，客户端在发出PUBLISH报文以后就把消息删掉，此时消息代理不一定能收到该PUBLISH报文，因此订阅者不一定能收到消息。</p>
+<p><img src="/images/mqtt-pub-when-qos-0.png" alt="Qos为0时的通信过程"><br>Qos为1时，消息代理在收到客户端的PUBLISH报文以后，会回应PUBACK报文，客户端在收到PUBACK报文以后才会删除本地消息，因此可以保证消息代理一定可以收到该PUBLISH报文。<br>之后，消息代理会向订阅者发送PUBLISH报文。同理，订阅者在收到来自消息代理的PUBLISH报文以后，会回应PUBACK报文。消息代理在收到PUBACK报文以后才会删除消息代理缓存的消息。因此可以保证订阅者一定可以收到该PUBLISH报文。</p>
+<p>为什么说Qos为1时，消息最少送达一次呢？</p>
+<p>上文中提到，客户端在收到PUBACK报文以后会删除本地消息，但是网络不稳定时，这个PUBACK报文中途可能丢失。这种情况下，由于客户端在一定时间内没收到这个报文，就会再次发送PUBLISH报文，导致订阅者最终可能多次收到消息。</p>
+<p><img src="/images/mqtt-pub-when-qos-1.png" alt="Qos为1时的通信过程"><br>Qos为2时，有两种方案。一种是，消息代理收到PUBLISH报文以后，将消息进行缓存，然后先确保客户端把本地的消息删除以后，再向订阅者发送PUBLISH报文。<br>另一种是，消息代理收到PUBLISH报文以后就向订阅者发送消息，但是会记录该消息的标识符直到客户端把本地的消息删除了。这样，即使客户端重复发送消息，消息代理也能通过标识符判断这条消息不需要再被发送了。因此，可以保证消息最多送达一次。</p>
+<p><img src="/images/mqtt-pub-when-qos-2.png" alt="Qos为2时的通信过程"></p>
+<h6 id="2-2-保留消息"><a href="#2-2-保留消息" class="headerlink" title="2.2 保留消息"></a>2.2 保留消息</h6><p>在有些场景中，设备通过发布消息向应用同步自己的最新状态，应用作为订阅者，会希望在连接以后马上收到设备的最新状态。设备在发布消息时，通过报文的保留标识，告知消息代理这是一条保留消息。每当有订阅者连接时，消息代理将马上向其发送这条保留消息。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Publish的参数依次是发布主题，Qos， 保留标识，消息主体</span></span><br><span class="line">token := client.Publish(<span class="string">"topic/sensor_01"</span>, <span class="number">0</span>, <span class="literal">false</span>, msg)</span><br><span class="line"><span class="keyword">if</span> token.Wait() &amp;&amp; token.Error() == <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="keyword">break</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-订阅"><a href="#3-订阅" class="headerlink" title="3 订阅"></a>3 订阅</h5><p>Subscribe用于订阅某个topic的消息，并且指定客户端接收到此topic的消息时要调用的处理句柄。<br>客户端通过向消息代理发送SUBSCRIBE报文来进行订阅，消息代理接收到以后并且处理成功以后，会返回SUBACK报文。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> token := client.Subscribe(<span class="string">"topic/sensor_01"</span>, <span class="number">2</span>, handler); token.Wait() &amp;&amp; token.Error() != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="built_in">panic</span>(token.Error())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-断开连接"><a href="#4-断开连接" class="headerlink" title="4 断开连接"></a>4 断开连接</h5><h6 id="4-1-正常离线"><a href="#4-1-正常离线" class="headerlink" title="4.1 正常离线"></a>4.1 正常离线</h6><p>客户端通过Disconnect主动断开连接，此时消息代理认为客户端是正常离线。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">client.Disconnect(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<h6 id="4-2-异常离线"><a href="#4-2-异常离线" class="headerlink" title="4.2 异常离线"></a>4.2 异常离线</h6><p>客户端与消息代理建立连接以后，会通过心跳机制与消息代理保持连接。上文中我们提到了连接选项KeepAlive，代表客户端向消息代理发送心跳包的周期。<br>如果keepAlive时间内，客户端没有别的报文需要发给消息代理，就会发送一个PINGREQ报文给消息代理。<br>因此，消息代理可以根据与客户端之间的通信间隔时长来判断客户端是否异常离线。<br>比如，当客户端超过1.5倍keepAlive时长没向Mosquitto发送报文时，Mosquitto认为其异常离线。如果客户端在此前设置了遗言，Mosquitto就会代表其发布遗言。</p>
+<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><p><a href="https://mcxiaoke.gitbooks.io/mqtt-cn/content/" target="_blank" rel="noopener">MQTT协议中文版</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/" data-id="ckfl7qd4s0000ossz2sji141x" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MQTT/" rel="tag">MQTT</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          nsq消息-从生产者到消费者
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">mosquitto安全机制</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MQTT/" rel="tag">MQTT</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Mosquitto/" rel="tag">Mosquitto</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NSQ/" rel="tag">NSQ</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/MQTT/" style="font-size: 20px;">MQTT</a> <a href="/tags/Mosquitto/" style="font-size: 10px;">Mosquitto</a> <a href="/tags/NSQ/" style="font-size: 10px;">NSQ</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/">nsq消息-从生产者到消费者</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/">mqtt协议原理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/">mosquitto安全机制</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Lya<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

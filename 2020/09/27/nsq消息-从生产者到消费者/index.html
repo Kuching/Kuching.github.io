@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>nsq消息-从生产者到消费者 | Lya&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="我突然意识到，在隔了差不多两个多月，我重新看之前写的nsq学习笔记时，我完全没有办法在其中找到我想了解的信息。一个主要的原因是，我当时大部分笔记都是对官网文档的直接翻译，并没有自己的问题和思考在其中。所以今天主要是想重新回顾一下nsq中的数据流走向。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nsq消息-从生产者到消费者">
+<meta property="og:url" content="http://yoursite.com/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/index.html">
+<meta property="og:site_name" content="Lya&#39;s blog">
+<meta property="og:description" content="我突然意识到，在隔了差不多两个多月，我重新看之前写的nsq学习笔记时，我完全没有办法在其中找到我想了解的信息。一个主要的原因是，我当时大部分笔记都是对官网文档的直接翻译，并没有自己的问题和思考在其中。所以今天主要是想重新回顾一下nsq中的数据流走向。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-09-27T14:15:32.000Z">
+<meta property="article:modified_time" content="2020-09-27T14:42:21.165Z">
+<meta property="article:author" content="Lya">
+<meta property="article:tag" content="NSQ">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Lya&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Lya&#39;s blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-nsq消息-从生产者到消费者" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/" class="article-date">
+  <time datetime="2020-09-27T14:15:32.000Z" itemprop="datePublished">2020-09-27</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      nsq消息-从生产者到消费者
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>我突然意识到，在隔了差不多两个多月，我重新看之前写的nsq学习笔记时，我完全没有办法在其中找到我想了解的信息。<br>一个主要的原因是，我当时大部分笔记都是对官网文档的直接翻译，并没有自己的问题和思考在其中。<br>所以今天主要是想重新回顾一下nsq中的数据流走向。</p>
+<a id="more"></a>
+
+<p>想象一下你现在使用的是一个这样的拓扑结构：</p>
+<ol>
+<li>你的业务有多个微服务，每个微服务都单独配置了一个nsqd。</li>
+<li>每个微服务向自己的nsqd发布消息。</li>
+<li>微服务A向话题topic_01发布消息，微服务B向话题topic_02发布消息。</li>
+<li>拓扑中包含了两个nsqlookupd，nsq客户端通过nsqlookupd进行订阅。</li>
+</ol>
+<p>此时，一个consumer同时订阅了topic_01和topic_02，那么消息是如何从微服务A的nsqd及微服务B的nsqd到达这个consumer的呢？</p>
+<h4 id="1-客户端-连接、订阅"><a href="#1-客户端-连接、订阅" class="headerlink" title="1. 客户端-连接、订阅"></a>1. 客户端-连接、订阅</h4><p>首先，我们先来回顾一下consumer是如何通过nsqlookupd完成订阅的。<br>我们知道，nsqlookupd是注册发现服务，consumer连接nsqlooupd以后可以知道具体的nsqd地址，然后直连nsqd。</p>
+<p>Question: 那么consumer每次都会直连所有的nsqd么？即使其中某些nsqd并没有存储客户端关注的话题。<br>我的想法是，为了效率，我们不应该这么做。<br>所以会不会是consumer通过定时请求nsqlookupd获取nsqd-address-topics表，然后consumer通过自身订阅情况简历与nsqd的连接？</p>
+<p>在go-nsq中，一个consumer对应唯一的topic和channel。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">c, err := nsq.NewConsumer(topic, channel, nsq.NewConfig())</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="built_in">panic</span>(err)</span><br><span class="line">&#125;</span><br><span class="line">c.AddHandler(handler)</span><br><span class="line"><span class="keyword">if</span> err := c.ConnectToNSQLookupds(address); err != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="built_in">panic</span>(err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ConnectToNSQLookupds会遍历addresses里面的lookupd并进行连接。接下来我们看一下ConnectToNSQLookupd具体做了些什么？<br>首先，它会将当前的lookupd addr加入到consumer的lookupdHTTPAddrs中，<br>如果这是第一个被加入的，就执行queryLookupd，并且开启一个执行lookupdLoop的goroutine。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">r.lookupdHTTPAddrs = <span class="built_in">append</span>(r.lookupdHTTPAddrs, addr)</span><br><span class="line">numLookupd := <span class="built_in">len</span>(r.lookupdHTTPAddrs)</span><br><span class="line">r.mtx.Unlock()</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> numLookupd == <span class="number">1</span> &#123;</span><br><span class="line">	r.queryLookupd()</span><br><span class="line">	r.wg.Add(<span class="number">1</span>)</span><br><span class="line">	<span class="keyword">go</span> r.lookupdLoop()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>queryLookupd会调用lookupd的lookup接口。此接口返回包含当前topic的nsqd地址列表，consumer会遍历这个列表，对其中的每一个nsqd调用ConnectToNSQD。<br>lookupLoop会周期性地调用queryLookupd。<br>ConnectToNSQD会与nsqd建立连接，建立成功以后向连接发送SUB命令，如果nsqd返回成功则当前连接会被记录到comsumer.Connections。</p>
+<p>所以实际上，consumer会在初始化时调用以及后续周期性调用lookup接口获取包含当前topic的nsqd地址列表，并且和这些nsqd建立连接。</p>
+<p>那这时就产生了另一个问题，消息在被发布到一个新的nsqd时，这时consumer还未和该nsqd建立连接。那这条消息是否会被丢弃？</p>
+<p>接下来我们先来通过nsqd的源码分析了解一下消息的传递过程。</p>
+<h4 id="2-nsqd-连接处理"><a href="#2-nsqd-连接处理" class="headerlink" title="2. nsqd-连接处理"></a>2. nsqd-连接处理</h4><p>nsqd通过tcpServer来处理跟保存tcp连接，这一块的定义在nsqd/tcp.go中。</p>
+<p>nsqd首先会从连接中读出一个代表协议版本的字段。目前只支持版本号”  V2”，如果读到别的字符串则会返回错误并关闭连接。<br>如果版本号正确，nsqd就会生成一个protocolV2实例，并调用protocolV2.IOLoop。<br>IOLoop持续地从连接中读出命令并写入响应，当读取发生错误时，连接会被关闭，IOLoop结束。</p>
+<p>在此之前，IOLoop会做一些准备性的工作。首先，它会将连接封装为一个有唯一id的client。并将client存入nsqd。<br>然后启动一个goroutine用来执行protocolV2.messagePump，后续nsqd会通过这个向consumer推送消息。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">clientID := atomic.AddInt64(&amp;p.ctx.nsqd.clientIDSequence, <span class="number">1</span>)</span><br><span class="line">client := newClientV2(clientID, conn, p.ctx)</span><br><span class="line">p.ctx.nsqd.AddClient(client.ID, client)</span><br><span class="line"></span><br><span class="line">messagePumpStartedChan := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">bool</span>)</span><br><span class="line"><span class="keyword">go</span> p.messagePump(client, messagePumpStartedChan)</span><br><span class="line">&lt;-messagePumpStartedChan</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-nsqd-SUB命令处理"><a href="#3-nsqd-SUB命令处理" class="headerlink" title="3. nsqd-SUB命令处理"></a>3. nsqd-SUB命令处理</h4><p>接下来我们重点分析下nsqd如何处理SUB命令。这一块的逻辑在nsqd/protocol_v2.go里面。<br>当nsqd收到一个SUB请求时，会首先对SUB的topic参数和channel参数进行合理性判断，并对SUB行为进行权限判断。<br>然后，nsqd会通过GetTopic获取或生成一个Topic实例，再通过topic.GetChannel获取或生成一个Channel实例。<br>通过channel.AddClient在Channel实例中添加一个consumer，Channel中的客户端数量太多时会添加失败。<br>比较重要的是最后两行，nsqd最后会将前面获取的channel实例赋值给client的Channel和SubEventChan。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">topic := p.ctx.nsqd.GetTopic(topicName)</span><br><span class="line">channel = topic.GetChannel(channelName)</span><br><span class="line"><span class="keyword">if</span> err := channel.AddClient(client.ID, client); err != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span>, protocol.NewFatalClientErr(<span class="literal">nil</span>, <span class="string">"E_TOO_MANY_CHANNEL_CONSUMERS"</span>,</span><br><span class="line">		fmt.Sprintf(<span class="string">"channel consumers for %s:%s exceeds limit of %d"</span>,</span><br><span class="line">			topicName, channelName, p.ctx.nsqd.getOpts().MaxChannelConsumers))</span><br><span class="line">&#125;</span><br><span class="line">...</span><br><span class="line">client.Channel = channel</span><br><span class="line">client.SubEventChan &lt;- channel</span><br></pre></td></tr></table></figure>
+
+<p>在上一个部分中我们讲到nsqd会通过messagePump给consumer推送消息，实际上messagePump就是从client.Channel中读取消息再向consumer推送。<br>那Channel中的消息又来自哪里？</p>
+<p>我们接下来来分析一下nsqd对PUB命令的处理逻辑。这一块的定义在nsqd的protocol_v2.go中。</p>
+<h4 id="4-nsqd-PUB命令处理"><a href="#4-nsqd-PUB命令处理" class="headerlink" title="4. nsqd-PUB命令处理"></a>4. nsqd-PUB命令处理</h4><h5 id="4-1-写入Topic"><a href="#4-1-写入Topic" class="headerlink" title="4.1 写入Topic"></a>4.1 写入Topic</h5><p>当nsqd收到一个PUB请求时，会首先对PUB的消息主体和主题对象进行内容和权限的合理性判断，然后通过GetTopic生成或者获取一个Topic实例。<br>topic.PutMessage中调用了topic.Put，接下来我们深入了解一下Put的逻辑。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">topic := p.ctx.nsqd.GetTopic(topicName)</span><br><span class="line">msg := NewMessage(topic.GenerateID(), messageBody)</span><br><span class="line">err = topic.PutMessage(msg)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span>, protocol.NewFatalClientErr(err, <span class="string">"E_PUB_FAILED"</span>, <span class="string">"PUB failed "</span>+err.Error())</span><br><span class="line">&#125;</span><br><span class="line">client.PublishedMessage(topicName, <span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<p>Put首先会尝试往topic的memoryMsgChan中写入消息m。memoryMsgChan可以理解为当前Topic实例在内存中的消息存储队列，且长度固定。因此当队列中已经存满时，写入会阻塞。<br>此时消息会被写入topic在磁盘中的消息存储队列。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> &#123;</span><br><span class="line"><span class="keyword">case</span> t.memoryMsgChan &lt;- m:</span><br><span class="line"><span class="keyword">default</span>:</span><br><span class="line">	b := bufferPoolGet()</span><br><span class="line">	err := writeMessageToBackend(b, m, t.backend)</span><br><span class="line">	bufferPoolPut(b)</span><br><span class="line">	t.ctx.nsqd.SetHealth(err)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		t.ctx.nsqd.logf(LOG_ERROR,</span><br><span class="line">			<span class="string">"TOPIC(%s) ERROR: failed to write message to backend - %s"</span>,</span><br><span class="line">			t.name, err)</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> <span class="literal">nil</span></span><br></pre></td></tr></table></figure>
+<p>目前消息只是被缓存到了Topic里面，那Topic中的消息又是怎么被写入Channel的呢？</p>
+<h5 id="4-2-写入Channel"><a href="#4-2-写入Channel" class="headerlink" title="4.2 写入Channel"></a>4.2 写入Channel</h5><p>在第3部分中，我们讲到nsqd会启动一个执行messagePump的goroutine来从client.Channel中读取消息再向consumer推送。<br>消息从Topic到Channel用的也是这种方式。<br>NewTopic在生成Topic实例以后，会启动一个执行Topic.MessagePump的goroutine，来将消息从Topic缓存中推送到Channel的缓存。<br>值得注意的是，如果此时还没有人订阅这个topic，则Topic.ChannelMap为空，此时消息从Topic缓存读出后即丢弃。</p>
+<p>现在我们已经大致了解了消息从生产者到nsqd到订阅者的传递过程。也解答了另一个问题：如果消息发布时消费者还不存在，这时消息会被丢弃。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/" data-id="ckfl7qd4x0001ossz936o0a5d" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NSQ/" rel="tag">NSQ</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">mqtt协议原理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MQTT/" rel="tag">MQTT</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Mosquitto/" rel="tag">Mosquitto</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NSQ/" rel="tag">NSQ</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/MQTT/" style="font-size: 20px;">MQTT</a> <a href="/tags/Mosquitto/" style="font-size: 10px;">Mosquitto</a> <a href="/tags/NSQ/" style="font-size: 10px;">NSQ</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/">nsq消息-从生产者到消费者</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/">mqtt协议原理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/">mosquitto安全机制</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Lya<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
