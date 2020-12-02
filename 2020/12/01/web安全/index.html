@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-cat-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-cat-16x16.png">
+  <link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Comic+Sans+MS:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","images":"/images","scheme":"Pisces","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="从一名后台开发工作者的角度来看，web安全是什么？ 毕业以来，我的工作之一是为设备端和APP端提供接口，在这个过程我也有关注过一些安全问题。比如：  接口层面上的安全问题 MQTT服务器的连接安全  由于较少和前端打交道，对web安全反倒没有太多了解。所以这篇文章主要是想整理一下常见的web安全问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="常见web安全问题">
+<meta property="og:url" content="http://yoursite.com/2020/12/01/web%E5%AE%89%E5%85%A8/index.html">
+<meta property="og:site_name" content="lya&#39;s Blog">
+<meta property="og:description" content="从一名后台开发工作者的角度来看，web安全是什么？ 毕业以来，我的工作之一是为设备端和APP端提供接口，在这个过程我也有关注过一些安全问题。比如：  接口层面上的安全问题 MQTT服务器的连接安全  由于较少和前端打交道，对web安全反倒没有太多了解。所以这篇文章主要是想整理一下常见的web安全问题。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-01T12:59:37.000Z">
+<meta property="article:modified_time" content="2020-12-02T06:34:59.207Z">
+<meta property="article:author" content="Lya">
+<meta property="article:tag" content="安全">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/12/01/web%E5%AE%89%E5%85%A8/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>常见web安全问题 | lya's Blog</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">lya's Blog</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">meow~</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#XSS-Cross-Site-Scripting"><span class="nav-number">1.</span> <span class="nav-text">XSS - Cross-Site Scripting</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#存储型XSS"><span class="nav-number">1.1.</span> <span class="nav-text">存储型XSS</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#反射型XSS"><span class="nav-number">1.2.</span> <span class="nav-text">反射型XSS</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#DOM型XSS"><span class="nav-number">1.3.</span> <span class="nav-text">DOM型XSS</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#XSS防范"><span class="nav-number">2.</span> <span class="nav-text">XSS防范</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#HTML转义"><span class="nav-number">2.1.</span> <span class="nav-text">HTML转义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#CSP-Content-Security-Policy"><span class="nav-number">2.2.</span> <span class="nav-text">CSP - Content Security Policy</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#HTTPOnly-Cookie"><span class="nav-number">2.3.</span> <span class="nav-text">HTTPOnly Cookie</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF-Cross-Site-Request-Forgery"><span class="nav-number">3.</span> <span class="nav-text">CSRF - Cross-Site Request Forgery</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#GET类型CSRF"><span class="nav-number">3.1.</span> <span class="nav-text">GET类型CSRF</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#POST类型CSRF"><span class="nav-number">3.2.</span> <span class="nav-text">POST类型CSRF</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#链接类型CSRF"><span class="nav-number">3.3.</span> <span class="nav-text">链接类型CSRF</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF防范"><span class="nav-number">4.</span> <span class="nav-text">CSRF防范</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#同源检测"><span class="nav-number">4.1.</span> <span class="nav-text">同源检测</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#CSRF-Token"><span class="nav-number">4.2.</span> <span class="nav-text">CSRF Token</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#验证码和密码"><span class="nav-number">4.3.</span> <span class="nav-text">验证码和密码</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#双重cookie"><span class="nav-number">4.4.</span> <span class="nav-text">双重cookie</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SQL注入"><span class="nav-number">5.</span> <span class="nav-text">SQL注入</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Lya"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Lya</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/12/01/web%E5%AE%89%E5%85%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Lya">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lya's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          常见web安全问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-01 20:59:37" itemprop="dateCreated datePublished" datetime="2020-12-01T20:59:37+08:00">2020-12-01</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-02 14:34:59" itemprop="dateModified" datetime="2020-12-02T14:34:59+08:00">2020-12-02</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>从一名后台开发工作者的角度来看，web安全是什么？</p>
+<p>毕业以来，我的工作之一是为设备端和APP端提供接口，在这个过程我也有关注过一些安全问题。比如：</p>
+<ol>
+<li>接口层面上的安全问题</li>
+<li>MQTT服务器的连接安全</li>
+</ol>
+<p>由于较少和前端打交道，对web安全反倒没有太多了解。所以这篇文章主要是想整理一下常见的web安全问题。</p>
+<a id="more"></a>
+
+<h4 id="XSS-Cross-Site-Scripting"><a href="#XSS-Cross-Site-Scripting" class="headerlink" title="XSS - Cross-Site Scripting"></a>XSS - Cross-Site Scripting</h4><p>跨站脚本攻击，是指攻击者在页面中嵌入了恶意脚本，当用户浏览页面时，恶意脚本将被执行。此时攻击者可以窃取用户的敏感信息，如cookie和session id；或者利用这些信息冒充用户进行请求。</p>
+<p>那么攻击者是如何嵌入恶意脚本的呢？</p>
+<h5 id="存储型XSS"><a href="#存储型XSS" class="headerlink" title="存储型XSS"></a>存储型XSS</h5><ol>
+<li>攻击者将恶意代码存入目标网站的数据库中</li>
+<li>用户打开目标网站时，网站服务端将恶意代码拼接到HTML并返回给用户</li>
+<li>浏览器在渲染页面时，混在其中的恶意代码也会被执行</li>
+<li>恶意代码可能窃取用户的数据并发送到攻击者的网站，或者冒充用户行为，调用目标网站接口执行攻击者指定的操作。</li>
+</ol>
+<p>这种攻击常见于可以存储用户数据的网站（贴吧，微博，商品评论，用户私信）</p>
+<h5 id="反射型XSS"><a href="#反射型XSS" class="headerlink" title="反射型XSS"></a>反射型XSS</h5><ol>
+<li>攻击者构造出特殊的URL，其参数包含恶意代码</li>
+<li>用户打开这个URL，服务端会正常从URL中提取参数并拼接到HTML中返回给用户</li>
+</ol>
+<p>存储型XSS会影响到更多用户。反射型XSS常见于通过URL传递参数的功能（搜索，跳转）</p>
+<h5 id="DOM型XSS"><a href="#DOM型XSS" class="headerlink" title="DOM型XSS"></a>DOM型XSS</h5><ol>
+<li>攻击者构造出特殊的URL，其参数包含恶意代码</li>
+<li>用户打开这个URL（服务端不处理参数）</li>
+<li>浏览器在收到响应后，通过脚本从URL中取得恶意代码并执行。<br>这种攻击纯粹是在前端发生的，在此不过多讨论。</li>
+</ol>
+<h4 id="XSS防范"><a href="#XSS防范" class="headerlink" title="XSS防范"></a>XSS防范</h4><p>那么如何预防前两种XSS呢？</p>
+<h5 id="HTML转义"><a href="#HTML转义" class="headerlink" title="HTML转义"></a>HTML转义</h5><p>这两种XSS的发生都是因为页面最终执行了恶意代码，那么我们可以对HTML进行充分转义去进行防范。<br>从前端的角度来看，用户数据在提交前可以进行转义处理，从后端获取的数据可以在进行转义处理后再进行解析渲染。<br>从后端的角度来看，服务端在存储用户数据之前，可以首先对用户数据做转义处理，或是在拼接到HTML之前对数据进行转义处理。</p>
+<h5 id="CSP-Content-Security-Policy"><a href="#CSP-Content-Security-Policy" class="headerlink" title="CSP - Content Security Policy"></a>CSP - Content Security Policy</h5><p>由于表单参数或URL参数长度限制，通常嵌入在页面中的恶意脚本还无法达到攻击者目的。此时攻击者可能通过引入外源的恶意脚本是进行攻击。<br>CSP就是建立白名单告诉浏览器可以加载的资源名单。</p>
+<h5 id="HTTPOnly-Cookie"><a href="#HTTPOnly-Cookie" class="headerlink" title="HTTPOnly Cookie"></a>HTTPOnly Cookie</h5><p>禁止Javascript读取cookie，防止攻击者通过脚本窃取用户cookie。</p>
+<h4 id="CSRF-Cross-Site-Request-Forgery"><a href="#CSRF-Cross-Site-Request-Forgery" class="headerlink" title="CSRF - Cross-Site Request Forgery"></a>CSRF - Cross-Site Request Forgery</h4><p>跨站请求伪造，是指攻击者诱导用户进入攻击者网站（或诱导用户点击攻击者构造的URL），在攻击者网站中，向被攻击者网站发送跨站请求。利用用户已经获取的被攻击者网站的凭证（cookie），绕过后台验证，达到冒充用户执行某项操作的目的。</p>
+<h5 id="GET类型CSRF"><a href="#GET类型CSRF" class="headerlink" title="GET类型CSRF"></a>GET类型CSRF</h5><p>攻击者通过在攻击者网站嵌入一个含有恶意链接的img标签，用户进入攻击者网站时，浏览器会自动发出一个GET请求加载img的链接（可能是向被攻击者网站发出的GET请求）。</p>
+<h5 id="POST类型CSRF"><a href="#POST类型CSRF" class="headerlink" title="POST类型CSRF"></a>POST类型CSRF</h5><p>攻击者通过在攻击者网站中嵌入一个自动提交的表单，用户进入攻击者网站时，浏览器会自动提交该POST请求。</p>
+<h5 id="链接类型CSRF"><a href="#链接类型CSRF" class="headerlink" title="链接类型CSRF"></a>链接类型CSRF</h5><p>攻击者通过在论坛等地方发布嵌入了恶意链接的图片或广告，诱导用户点击。</p>
+<h4 id="CSRF防范"><a href="#CSRF防范" class="headerlink" title="CSRF防范"></a>CSRF防范</h4><p>可以看出CSRF发生有几个条件：</p>
+<ol>
+<li>跨域 CSRF攻击通常发生在第三方网站，而被攻击者网站允许来自第三方网站的请求</li>
+<li>攻击者知道请求参数，可以伪造请求</li>
+<li>被攻击者网站在用户请求带有cookie的情况下不再对用户请求进行认证 </li>
+<li>浏览器允许跨域请求携带cookie<br>因此我们可以通过破坏以上任一条件来进行防范。</li>
+</ol>
+<h5 id="同源检测"><a href="#同源检测" class="headerlink" title="同源检测"></a>同源检测</h5><p>HTTP请求的头部Referer字段标记了请求的来源，而前端无法使用Javascript修改字段。因此服务端可以对Referer字段进行验证，只允许同源请求。<br>需要注意的是，由于不同浏览器对Referer的具体实现不同，攻击者可能可以隐藏或者修改请求的Referer。另外，有一些页面链接可能会出现在搜索结果页面中，业务需要额外考虑这种情况。</p>
+<h5 id="CSRF-Token"><a href="#CSRF-Token" class="headerlink" title="CSRF Token"></a>CSRF Token</h5><p>CSRF Token是服务端随机生成的，通常是使用UserID，时间戳和随机数，通过加密的方法生成的。用户请求页面时，服务器为该页面生成token，由前端写入页面。<br>用户在该页面提交的请求需要携带该token，服务端验证其存在并有效。而攻击者无法得知该token，因此无法进行攻击。<br>这个措施成功的前提是该页面不存在XSS漏洞。</p>
+<h5 id="验证码和密码"><a href="#验证码和密码" class="headerlink" title="验证码和密码"></a>验证码和密码</h5><p>通过在请求过程中增加用户交互环节，也可以起到防范作用。这种方式更加安全，但是会降低用户体验。</p>
+<h5 id="双重cookie"><a href="#双重cookie" class="headerlink" title="双重cookie"></a>双重cookie</h5><p>前端发起请求时需要另外读出cookie并拼接到请求的URL后面。</p>
+<p>以上是针对通过第三方网站实现CSRF攻击的防范措施，那么如何防止自己的网站被利用呢？</p>
+<ol>
+<li>对于用户上传的图片，不要直接使用用户填写的链接，而是进行转存或者要经过校验。</li>
+<li>当用户在本网站打开其他用户提供的链接时，需告知风险。</li>
+<li>严格管理上传接口，对用户上传内容进行检测</li>
+<li>在header中添加nosniff，防止浏览器通过内容嗅探修改用户内容的解析类型</li>
+</ol>
+<h4 id="SQL注入"><a href="#SQL注入" class="headerlink" title="SQL注入"></a>SQL注入</h4><p>SQL注入的发生主要是因为后端直接使用用户提交的数据来拼接SQL语句，一旦用户提交的是含有恶意命令的非法数据，就可能引起数据库的安全问题。<br>主要的解决方案还是对用户提交的数据进行合法性的检测和必要的转义。<br>在此就不过多展开了。</p>
+<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="https://juejin.cn/post/6844903772930441230" target="_blank" rel="noopener">常见六大web安全问题</a></li>
+<li><a href="https://tech.meituan.com/2018/09/27/fe-security.html" target="_blank" rel="noopener">美团前端安全-XSS</a></li>
+<li><a href="https://tech.meituan.com/2018/10/11/fe-security-csrf.html" target="_blank" rel="noopener">美团前端安全-CSRF</a></li>
+<li><a href="https://xz.aliyun.com/t/1243#toc-0" target="_blank" rel="noopener">CSRF攻防汇总</a></li>
+<li><a href="https://www.mi1k7ea.com/2019/06/25/%E6%B5%85%E6%9E%90DOM%E5%9E%8BXSS/#0x02-DOM%E5%9E%8BXSS" target="_blank" rel="noopener">DOM型XSS</a></li>
+<li><a href="https://www.cnblogs.com/lizm166/p/12627190.html" target="_blank" rel="noopener">内容嗅探</a> </li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AE%89%E5%85%A8/" rel="tag"># 安全</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/" rel="prev" title="nsq消息-从生产者到消费者">
+                  <i class="fa fa-chevron-left"></i> nsq消息-从生产者到消费者
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Lya</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+</body>
+</html>

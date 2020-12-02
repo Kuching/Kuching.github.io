@@ -23,17 +23,17 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"yoursite.com","root":"/","images":"/images","scheme":"Pisces","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-<meta name="description" content="初稿 2020&#x2F;9&#x2F;13 这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享">
+<meta name="description" content="这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。 前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享一下我的经验。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mosquitto安全机制">
 <meta property="og:url" content="http://yoursite.com/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/index.html">
 <meta property="og:site_name" content="lya&#39;s Blog">
-<meta property="og:description" content="初稿 2020&#x2F;9&#x2F;13 这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享">
+<meta property="og:description" content="这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。 前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享一下我的经验。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/images/communication-through-mqtt-broker.png">
 <meta property="og:image" content="http://yoursite.com/images/mosquitto-safety-control.png">
 <meta property="article:published_time" content="2020-09-12T07:54:39.000Z">
-<meta property="article:modified_time" content="2020-11-25T09:02:00.602Z">
+<meta property="article:modified_time" content="2020-12-02T06:43:51.868Z">
 <meta property="article:author" content="Lya">
 <meta property="article:tag" content="MQTT">
 <meta property="article:tag" content="Mosquitto">
@@ -179,7 +179,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-证书校验"><span class="nav-number">1.</span> <span class="nav-text">1. 证书校验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-clientID限制"><span class="nav-number">2.</span> <span class="nav-text">2. clientID限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-发布-订阅权限控制"><span class="nav-number">3.</span> <span class="nav-text">3. 发布&#x2F;订阅权限控制</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#证书校验"><span class="nav-number">1.</span> <span class="nav-text">证书校验</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#clientID限制"><span class="nav-number">2.</span> <span class="nav-text">clientID限制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#发布-订阅权限控制"><span class="nav-number">3.</span> <span class="nav-text">发布&#x2F;订阅权限控制</span></a></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -195,12 +195,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -270,7 +270,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-11-25 17:02:00" itemprop="dateModified" datetime="2020-11-25T17:02:00+08:00">2020-11-25</time>
+        <time title="修改时间：2020-12-02 14:43:51" itemprop="dateModified" datetime="2020-12-02T14:43:51+08:00">2020-12-02</time>
       </span>
 
   
@@ -283,25 +283,25 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>初稿 2020/9/13</p>
-<p>这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。<br>前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享一下我的经验。</p>
+        <p>这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。</p>
+<p>前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享一下我的经验。</p>
 <a id="more"></a>
 
-<p>简单来说，MQTT是一种基于发布/订阅的消息协议，可以基于TCP或websocket连接。由于MQTT相较于HTTP更轻量，能节省更多的传输成本，因此在IoT设备通信场景中使用较为广泛。想对MQTT协议有进一步了解的朋友，可以查看我的另外一篇博客<a href="https://kuching.github.io/2020/09/21/MQTT协议/#more" target="_blank" rel="noopener">MQTT协议</a>。<br>在这种基于发布/订阅的方式下，设备之间实际上是通过消息代理去进行通信，而mosquitto就是一个支持MQTT协议的开源消息代理。可以理解为设备与消息代理之间的通信会采用MQTT协议，消息代理也会通过MQTT协议与消息订阅者进行通信。</p>
+<p>简单来说，MQTT是一种基于发布/订阅的消息协议，可以基于TCP或websocket连接。由于MQTT相较于HTTP更轻量，能节省更多的传输成本，因此在IoT设备通信场景中使用较为广泛。想对MQTT协议有进一步了解的朋友，可以查看我的另外一篇博客<a href="https://kuching.github.io/2020/09/26/mqtt协议原理/#more" target="_blank" rel="noopener">MQTT协议</a>。<br>在这种基于发布/订阅的方式下，设备之间实际上是通过消息代理去进行通信，而mosquitto就是一个支持MQTT协议的开源消息代理。可以理解为设备与消息代理之间的通信会采用MQTT协议，消息代理也会通过MQTT协议与消息订阅者进行通信。</p>
 <p><img src="/images/communication-through-mqtt-broker.png" alt="设备通过消息代理进行通信"></p>
 <p>接下来，我会介绍一套可用的mosquitto安全方案。如图：</p>
 <p><img src="/images/mosquitto-safety-control.png" alt="mosquitto安全方案"></p>
-<h3 id="1-证书校验"><a href="#1-证书校验" class="headerlink" title="1. 证书校验"></a>1. 证书校验</h3><p>为了实现设备的安全连接，mosquitto可以通过配置使用TLS协议，为MQTT协议提供身份认证和通信加密。原理与HTTPS差不多，对此感兴趣的，可以自行去了解一下。</p>
+<h4 id="证书校验"><a href="#证书校验" class="headerlink" title="证书校验"></a>证书校验</h4><p>为了实现设备的安全连接，mosquitto可以通过配置使用TLS协议，为MQTT协议提供身份认证和通信加密。原理与HTTPS差不多，对此感兴趣的，可以自行去了解一下。</p>
 <p>要使用TLS协议，需要修改以下配置项：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">require_certificate <span class="literal">true</span></span><br></pre></td></tr></table></figure>
 
 <p>通常，设备会在第一次连接mosquitto前获得设备密钥、设备证书、CA证书。设备发起连接时，需要提供设备证书。<br>Mosquitto认证层对设备证书进行解密校验，如果判定该设备证书不是当前CA所签发，则校验失败，Mosquitto将返回证书错误并断开设备连接。<br>否则进一步根据CRL - Certificate Revocation List判断该证书是否已被吊销。如果已被吊销，则Mosquitto将返回证书错误并断开设备连接。<br>否则连接建立成功，设备与Mosquitto可以继续通信。因此，当察觉设备异常或证书泄露时，可以通过吊销证书，避免进一步引发其他问题。</p>
-<h3 id="2-clientID限制"><a href="#2-clientID限制" class="headerlink" title="2. clientID限制"></a>2. clientID限制</h3><p>设备作为MQTT客户端连接Mosquitto时，可以自行提供clientID。为了避免非法设备冒用其他设备的clientID，以及clientID冲突问题，可以修改mosquitto配置，使用证书commonName作为clientID，此时设备自己提供的clientID与username不会生效。</p>
+<h4 id="clientID限制"><a href="#clientID限制" class="headerlink" title="clientID限制"></a>clientID限制</h4><p>设备作为MQTT客户端连接Mosquitto时，可以自行提供clientID。为了避免非法设备冒用其他设备的clientID，以及clientID冲突问题，可以修改mosquitto配置，使用证书commonName作为clientID，此时设备自己提供的clientID与username不会生效。</p>
 <p>配置项如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">require_certificate true</span><br><span class="line">use_identity_as_username true</span><br><span class="line">use_username_as_clientid true</span><br></pre></td></tr></table></figure>
 
 <p>签发证书时将设备唯一标识IMEI作为证书commonName，可强制设备使用自身IMEI作为clientID。此时一机一证才可以起到作用。</p>
-<h3 id="3-发布-订阅权限控制"><a href="#3-发布-订阅权限控制" class="headerlink" title="3. 发布/订阅权限控制"></a>3. 发布/订阅权限控制</h3><p>设备订阅topic时，Mosquitto根据ACL - Access Control List判断设备是否有权限对该topic进行订阅。<br>同理，设备发布消息到某个topic时，Mosquitto也会根据ACL判断设备权限。</p>
+<h4 id="发布-订阅权限控制"><a href="#发布-订阅权限控制" class="headerlink" title="发布/订阅权限控制"></a>发布/订阅权限控制</h4><p>设备订阅topic时，Mosquitto根据ACL - Access Control List判断设备是否有权限对该topic进行订阅。<br>同理，设备发布消息到某个topic时，Mosquitto也会根据ACL判断设备权限。</p>
 <p>例如，当ACL文件的内容如下时：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pattern <span class="built_in">read</span> device/down/%c</span><br><span class="line">pattern write device/up/%c</span><br><span class="line">user api_server</span><br><span class="line">topic <span class="built_in">read</span> device/up/<span class="comment">#</span></span><br><span class="line">topic write device/down/<span class="comment">#</span></span><br></pre></td></tr></table></figure>
 <p>前两行作用于所有连接，意味着，所有设备都可以订阅符合device/down/%c模式的主题。%c是通配符，代表当前客户端的clientID。</p>

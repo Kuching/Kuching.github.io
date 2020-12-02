@@ -185,12 +185,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -219,6 +219,90 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/12/01/web%E5%AE%89%E5%85%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Lya">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lya's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/01/web%E5%AE%89%E5%85%A8/" class="post-title-link" itemprop="url">常见web安全问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-01 20:59:37" itemprop="dateCreated datePublished" datetime="2020-12-01T20:59:37+08:00">2020-12-01</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-02 14:34:59" itemprop="dateModified" datetime="2020-12-02T14:34:59+08:00">2020-12-02</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>从一名后台开发工作者的角度来看，web安全是什么？</p>
+<p>毕业以来，我的工作之一是为设备端和APP端提供接口，在这个过程我也有关注过一些安全问题。比如：</p>
+<ol>
+<li>接口层面上的安全问题</li>
+<li>MQTT服务器的连接安全</li>
+</ol>
+<p>由于较少和前端打交道，对web安全反倒没有太多了解。所以这篇文章主要是想整理一下常见的web安全问题。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/12/01/web%E5%AE%89%E5%85%A8/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -259,7 +343,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-11-25 17:01:56" itemprop="dateModified" datetime="2020-11-25T17:01:56+08:00">2020-11-25</time>
+        <time title="修改时间：2020-12-02 14:36:04" itemprop="dateModified" datetime="2020-12-02T14:36:04+08:00">2020-12-02</time>
       </span>
 
   
@@ -272,7 +356,14 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p><img src="/images/cat-yawning.jpg" alt="猫猫打哈欠"><br>我突然意识到，在隔了差不多两个多月，我重新看之前写的nsq学习笔记时，我完全没有办法在其中找到我想了解的信息。<br>一个主要的原因是，我当时大部分笔记都是对官网文档的直接翻译，并没有自己的问题和思考在其中。<br>所以今天主要是想重新回顾一下nsq中的数据流走向。</p>
+          <p>想象一下你现在使用的是一个这样的拓扑结构：</p>
+<ol>
+<li>你的业务有多个微服务，每个微服务都单独配置了一个nsqd。</li>
+<li>每个微服务向自己的nsqd发布消息。</li>
+<li>微服务A向话题topic_01发布消息，微服务B向话题topic_02发布消息。</li>
+<li>拓扑中包含了两个nsqlookupd，nsq客户端通过nsqlookupd进行订阅。</li>
+</ol>
+<p>此时，一个consumer同时订阅了topic_01和topic_02，那么消息是如何从微服务A的nsqd及微服务B的nsqd到达这个consumer的呢？</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/09/27/nsq%E6%B6%88%E6%81%AF-%E4%BB%8E%E7%94%9F%E4%BA%A7%E8%80%85%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85/#more" rel="contents">
@@ -337,7 +428,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-09-27 22:36:06" itemprop="dateModified" datetime="2020-09-27T22:36:06+08:00">2020-09-27</time>
+        <time title="修改时间：2020-12-02 14:42:13" itemprop="dateModified" datetime="2020-12-02T14:42:13+08:00">2020-12-02</time>
       </span>
 
   
@@ -351,7 +442,8 @@
     
     <div class="post-body" itemprop="articleBody">
           <p>这篇博客主要是想介绍一下物联网通信协议MQTT的原理，其中demo使用了客户端库paho.mqtt.golang。</p>
-<p>MQTT与CoAP, LWM2M一样都是物联网通信中的主流协议。其中MQTT协议基于TCP，因此支持长连接; 而CoAP, LWM2M基于UDP，主要用于点对点的通信。由于MQTT报文基于文本，而CoAP、LWM2M使用二进制格式报文，因此后二者的报文长度更短，对设备和网络的要求更低。<br>三者各有各的特点，因此实际开发中选用哪个协议取决于具体的业务需求。</p>
+<p>MQTT与CoAP, LWM2M一样都是物联网通信中的主流协议。其中MQTT协议基于TCP，因此支持长连接; 而CoAP, LWM2M基于UDP，主要用于点对点的通信。由于MQTT报文基于文本，而CoAP、LWM2M使用二进制格式报文，因此后二者的报文长度更短，对设备和网络的要求更低。</p>
+<p>三者各有各的特点，因此实际开发中选用哪个协议取决于具体的业务需求。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/09/26/mqtt%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86/#more" rel="contents">
@@ -416,7 +508,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-11-25 17:02:00" itemprop="dateModified" datetime="2020-11-25T17:02:00+08:00">2020-11-25</time>
+        <time title="修改时间：2020-12-02 14:43:51" itemprop="dateModified" datetime="2020-12-02T14:43:51+08:00">2020-12-02</time>
       </span>
 
   
@@ -429,8 +521,8 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>初稿 2020/9/13</p>
-<p>这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。<br>前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享一下我的经验。</p>
+          <p>这一篇博客主要是想分享一下mosquitto在安全方面的一些可用配置跟措施。</p>
+<p>前一阵子在做MQTT协议的相关调研，对这个协议、相关的开源组件mosquitto，以及商用的解决方案AWS IoT有了一定的了解。可能是因为mosquitto在实际业务中使用会存在一定局限，使用上并不是那么广泛，我所查到的一些博客对mosquitto的安全方面其实记录得没有那么详细。在此与大家分享一下我的经验。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/09/12/mosquitto%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6/#more" rel="contents">
